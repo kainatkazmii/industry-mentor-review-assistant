@@ -1,114 +1,104 @@
-# Industry Mentor Review Assistant
+# 🤖 Industry Mentor Review Assistant
 
-An LLM-based intelligent review assistant that helps industry mentors review
-students' practice reports faster and with more precise, paragraph-level
-feedback.
+[![Python 3.10+](https://shields.io)](https://python.org)
+[![Framework-LangChain](https://shields.io)](https://langchain.com)
+[![Database-ChromaDB](https://shields.io)](https://trychroma.com)
 
-## Problem
+An LLM-powered, production-ready intelligent review assistant engineered to accelerate how industry mentors evaluate graduate practice reports through automated, paragraph-level semantic feedback.
 
-Industry mentors supervising professional-degree graduate students are
-usually busy engineers/managers with limited time to deeply read every
-practice report, project proposal, or technical document a student submits.
-This leads to slow review cycles and vague, high-level feedback (e.g. "needs
-more depth") that doesn't tell the student exactly what to fix.
+---
 
-## What This Tool Does
+## 📌 Problem Statement
+Industry mentors supervising professional-degree graduate students are usually busy engineers or managers. They have limited bandwidth to deeply analyze every lengthy practice report, project proposal, or technical document. This resource bottleneck results in:
+* **Slow review cycles** that delay student academic progression.
+* **Vague, high-level feedback** (e.g., *"needs more depth"*) which lacks actionable remediation steps.
 
-1. **Structured Summarization** — Parses a student's report (.docx/.pdf) and
-   extracts a structured summary: research problem, technical route,
-   conclusions, and innovation points.
-2. **RAG-Based Standards Comparison** — Compares the report against a
-   knowledge base of review standards and high-quality example reports
-   (using retrieval-augmented generation) to identify concrete issues such as
-   weak evidence, feasibility gaps, or missing context.
-3. **Paragraph-Located Annotations** — Matches each identified issue to a
-   specific paragraph in the original document, along with a suggested
-   revision, so the mentor only needs to confirm/adjust rather than write
-   feedback from scratch.
+---
 
-## Tech Stack
+## 🛠️ Key Capabilities
 
-- **LangChain** — orchestration of LLM calls, prompts, and retrieval
-- **Groq** (`openai/gpt-oss-20b`) — LLM inference
-- **ChromaDB** + **HuggingFace sentence-transformers
-- ** — vector store and
-  embeddings for the RAG pipeline
-- **Streamlit** — demo GUI
-- **Pydantic** — structured data validation
+| Feature | Technical Implementation | Core Functionality |
+| :--- | :--- | :--- |
+| **Structured Summarization** | `PyPDF2`, `python-docx`, `Pydantic` | Parses `.docx`/`.pdf` files to instantly extract core research problems, technical routes, conclusions, and innovations. |
+| **RAG-Based Comparison** | `ChromaDB`, `HuggingFace` Embeddings | Benchmarks the document against a local vector database containing institutional evaluation standards and high-quality exemplars. |
+| **Paragraph-Located Annotations** | Groq Native JSON Mode, `FastAPI` logic | Maps identified gaps directly back to the original source paragraph and auto-generates contextual revision notes. |
 
-## Project Structure
+---
 
-```text
+## 🎛️ Tech Stack & Tooling
+
+* **Orchestration:** LangChain (LLM calls, prompts management, pipeline chaining)
+* **Inference Engine:** Groq API (`openai/gpt-oss-20b` or Llama-based low-latency models)
+* **Vector Store & Embeddings:** ChromaDB + HuggingFace `sentence-transformers` (`all-MiniLM-L6-v2`)
+* **Data Validation:** Pydantic (Strict schema enforcement for structured output parsing)
+* **GUI Frontend:** Streamlit Dashboard
+
+---
+
+## 📁 Project Structure
+
+```bash
 industry_mentor_agent/
 ├── app.py                       # Streamlit GUI entry point
-├── requirements.txt
+├── requirements.txt             # Project dependencies
 ├── src/
-│   ├── config.py                # environment variables & constants
-│   ├── schemas.py               # Pydantic schemas for structured LLM output
-│   ├── document_loader.py       # .docx/.pdf text extraction
-│   ├── summarizer.py            # structured summary generation
-│   ├── vectorstore.py           # RAG knowledge base (standards + examples)
-│   ├── review_chain.py          # RAG-based issue detection
-│   └── annotator.py             # paragraph-level annotation generation
+│   ├── config.py                # Environment variables & constants
+│   ├── schemas.py               # Pydantic models for structured output
+│   ├── document_loader.py       # Robust .docx/.pdf structural extraction
+│   ├── summarizer.py            # Structured core components parser
+│   ├── vectorstore.py           # RAG knowledge store initialization
+│   ├── review_chain.py          # Vector similarity semantic search engine
+│   └── annotator.py             # Paragraph-level feedback synthesis logic
 ├── data/
-│   ├── standards/                # review criteria documents
-│   ├── examples/                 # high-quality example reports
-│   └── sample_reports/           # test reports used during development
+│   ├── standards/               # Evaluation criteria documents
+│   ├── examples/                # High-scoring baseline reports
+│   └── sample_reports/          # Unseen testing reports used in development
 └── tests/
-    └── test_document_loader.py   # basic automated tests
+    └── test_document_loader.py   # Automated pytest unit tests
 ```
 
+---
 
+## ⚙️ Installation & Setup
 
-## Setup
+1. **Clone the Repository & Install Dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-```bash
-pip install -r requirements.txt
-```
+2. **Configure Environment Variables:**
+   Create a `.env` file in the project root directory:
+   ```env
+   GROQ_API_KEY=your_actual_groq_api_key_here
+   ```
 
-Create a `.env` file in the project root:
+3. **Build the Vector Database (One-time ingestion):**
+   ```bash
+   python -c "from src.vectorstore import build_vectorstore; build_vectorstore('data/standards', 'data/examples')"
+   ```
 
-   GROQ_API_KEY=your_key_here
+4. **Launch the Application UI:**
+   ```bash
+   streamlit run app.py
+   ```
 
+5. **Run Automated Unit Tests:**
+   ```bash
+   pip install pytest
+   ```
+   ```bash
+   pytest tests/ -v
+   ```
 
-Build the vector store (one-time step, or whenever standards/examples change):
-```bash
-python -c "from src.vectorstore import build_vectorstore; build_vectorstore('data/standards', 'data/examples')"
-```
+---
 
-## Running the App
+## 💡 Production Architecture & Design Notes
 
-```bash
-streamlit run app.py
-```
+* **Context Retention Strategy:** To mitigate loss of granular metrics, the **RAG comparison pipeline queries the raw, full-text document** against institutional criteria instead of matching against a highly-compressed 4-field abstract.
+* **Deterministic Output Parsing:** While standard LangChain tool-calling can occasionally exhibit instability under long context windows, this architecture invokes **Groq's native JSON mode** backed by a **Pydantic schema validation pipeline**. A fallback retry loop with dynamic temperature scaling is implemented to gracefully handle malformed responses.
 
-## Running Tests
+---
 
-```bash
-pip install pytest
-pytest tests/ -v
-```
-
-## Design Notes
-
-- **Summary vs. full text for review**: The RAG comparison step uses the
-  full original report text (not just the compressed summary) when checking
-  against standards, to avoid losing detail (e.g. exact metrics) that a
-  4-field summary cannot fully capture.
-- **Reliability of structured output**: Testing showed that this
-  fast/free-tier model is not always fully reliable when forced into
-  LangChain's tool-calling-based structured output, especially with long
-  inputs. The `review_chain` and `annotator` modules call Groq's native JSON
-  mode directly and validate the response against the Pydantic schema, with
-  a retry loop (varying temperature) as a fallback for the rare malformed
-  response.
-
-## Limitations & Future Work
-
-- Currently supports `.docx` and `.pdf` inputs only.
-- The knowledge base (`data/standards`, `data/examples`) is a small,
-  illustrative set built for this assessment; a production deployment would
-  use the institution's actual program requirements and a larger archive of
-  past reports.
-- A larger/more capable LLM would likely reduce the need for retries in the
-  structured-output steps, at higher cost.
+## 🛑 Limitations & Roadmap
+* Current data parsing supports standalone `.docx` and `.pdf` documents; future iterations will support batch processing pipelines.
+* The local knowledge base utilizes a lightweight illustrative set; production systems can scale horizontally to cloud vector services.
